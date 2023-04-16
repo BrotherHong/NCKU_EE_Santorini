@@ -48,6 +48,7 @@ void saveStructure();
 
 Coordinate generateRandomCoordinate();
 bool isOutOfRange(Coordinate);
+Coordinate addCoordinate(Coordinate, Coordinate);
 
 bool canPlaceWorkerAt(Coordinate);
 void placeWorkersRandomly(int);
@@ -57,7 +58,8 @@ void moveWorker(Coordinate from, Coordinate to);
 bool canBuildAt(Coordinate);
 void buildStructureAt(Coordinate);
 
-Coordinate addCoordinate(Coordinate, Coordinate);
+void getPossibleMove(Coordinate from, Coordinate arr[], int *len);
+void getPossibleBuild(Coordinate from, Coordinate arr[], int *len);
 
 int main(int argc, char **argv) {
 
@@ -74,29 +76,24 @@ int main(int argc, char **argv) {
         return 0;
     }
 
+    /* pick a chess randomly */
     findChessPosition();
-
-    /* move randomly */ 
     int randIndex = rand()%2;
     Coordinate originPos = chessPositions[randIndex];
     if (!canWorkerEverMove(originPos)) {
         originPos = chessPositions[!randIndex];
     }
-    Coordinate deltaPos = delta[rand()%9];
-    Coordinate targetPos = addCoordinate(originPos, deltaPos);
-    while (!canMoveWorker(originPos, targetPos)) {
-        deltaPos = delta[rand()%9];
-        targetPos = addCoordinate(originPos, deltaPos);
-    }
+
+    int len;
+    Coordinate possiblePos[9];
+    /** move chess randomly **/
+    getPossibleMove(originPos, possiblePos, &len);
+    Coordinate targetPos = possiblePos[rand()%len];
     moveWorker(originPos, targetPos);
 
     /* build randomly */ 
-    deltaPos = delta[rand()%9];
-    Coordinate buildPos = addCoordinate(targetPos, deltaPos);
-    while (!canBuildAt(buildPos)) {
-        deltaPos = delta[rand()%9];
-        buildPos = addCoordinate(targetPos, deltaPos);
-    }
+    getPossibleBuild(targetPos, possiblePos, &len);
+    Coordinate buildPos = possiblePos[rand()%len];
     buildStructureAt(buildPos);
 
     saveChess();
@@ -205,6 +202,13 @@ bool isOutOfRange(Coordinate pos) {
     return !(0 <= pos.r && pos.r < GRID_SIZE && 0 <= pos.c && pos.c < GRID_SIZE);
 }
 
+Coordinate addCoordinate(Coordinate a, Coordinate b) {
+    Coordinate c;
+    c.r = a.r + b.r;
+    c.c = a.c + b.c;
+    return c;
+}
+
 bool canPlaceWorkerAt(Coordinate pos) {
     if (isOutOfRange(pos)) {
         return false;
@@ -275,9 +279,24 @@ void buildStructureAt(Coordinate pos) {
     /* printf("Build at (%d,%d)\n", pos.r, pos.c); */
 }
 
-Coordinate addCoordinate(Coordinate a, Coordinate b) {
-    Coordinate c;
-    c.r = a.r + b.r;
-    c.c = a.c + b.c;
-    return c;
+void getPossibleMove(Coordinate from, Coordinate arr[], int *len) {
+    int i, idx = 0;
+    for (i = 0;i < 9;i++) {
+        Coordinate to = addCoordinate(from, delta[i]);
+        if (canMoveWorker(from, to)) {
+            arr[idx++] = to;
+        }
+    }
+    *len = idx;
+}
+
+void getPossibleBuild(Coordinate from, Coordinate arr[], int *len) {
+    int i, idx = 0;
+    for (i = 0;i < 9;i++) {
+        Coordinate pos = addCoordinate(from, delta[i]);
+        if (canBuildAt(pos)) {
+            arr[idx++] = pos;
+        }
+    }
+    *len = idx;
 }
