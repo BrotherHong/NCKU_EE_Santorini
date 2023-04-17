@@ -7,7 +7,7 @@
 #define GRID_SIZE 5
 
 typedef enum chess_e {
-    BLACK = 1, WHITE = 2,
+    NONE = 0, BLACK = 1, WHITE = 2,
 } Chess;
 
 typedef enum god_e {
@@ -84,16 +84,37 @@ int main(int argc, char **argv) {
         originPos = chessPositions[!randIndex];
     }
 
-    int len;
+    int len, i;
     Coordinate possiblePos[9];
-    /** move chess randomly **/
+    /* move chess as high as possible */
     getPossibleMove(originPos, possiblePos, &len);
-    Coordinate targetPos = possiblePos[rand()%len];
+    Coordinate targetPos;
+    int mx = -1;
+    for (i = 0;i < len;i++) {
+        Coordinate *psb = &possiblePos[i];
+        int height = structure[psb->r][psb->c];
+        if (height > mx) {
+            mx = height;
+            targetPos = possiblePos[i];
+        }
+    }
     moveWorker(originPos, targetPos);
 
-    /* build randomly */ 
+    /* build as high as possible but build h<3 first */ 
     getPossibleBuild(targetPos, possiblePos, &len);
-    Coordinate buildPos = possiblePos[rand()%len];
+    Coordinate buildPos;
+    mx = -1;
+    for (i = 0;i < len;i++) {
+        Coordinate *psb = &possiblePos[i];
+        int height = structure[psb->r][psb->c];
+        if (height > mx) {
+            if (mx != -1 && height == 3) {
+                continue;
+            }
+            mx = height;
+            buildPos = possiblePos[i];
+        }
+    }
     buildStructureAt(buildPos);
 
     saveChess();
@@ -213,7 +234,7 @@ bool canPlaceWorkerAt(Coordinate pos) {
     if (isOutOfRange(pos)) {
         return false;
     }
-    if (chess[pos.r][pos.c] != 0) {
+    if (chess[pos.r][pos.c] != NONE) {
         return false;
     }
     return true;
@@ -233,7 +254,7 @@ bool canMoveWorker(Coordinate from, Coordinate to) {
     if (isOutOfRange(to)) {
         return false;
     }
-    if (chess[to.r][to.c] != 0) {
+    if (chess[to.r][to.c] != NONE) {
         return false;
     }
     if (structure[to.r][to.c] == 4) {
@@ -256,7 +277,7 @@ bool canWorkerEverMove(Coordinate pos) {
 }
 
 void moveWorker(Coordinate from, Coordinate to) {
-    chess[from.r][from.c] = 0;
+    chess[from.r][from.c] = NONE;
     chess[to.r][to.c] = myChess;
     /* printf("Move %d from (%d,%d) to (%d,%d)\n", myChess, from.r, from.c, to.r, to.c); */
 }
@@ -265,7 +286,7 @@ bool canBuildAt(Coordinate pos) {
     if (isOutOfRange(pos)) {
         return false;
     }
-    if (chess[pos.r][pos.c] != 0) {
+    if (chess[pos.r][pos.c] != NONE) {
         return false;
     }
     if (structure[pos.r][pos.c] == 4) {
