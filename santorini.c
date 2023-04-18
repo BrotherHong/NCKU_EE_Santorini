@@ -71,6 +71,8 @@ void getAllPossibleBuild(Coordinate from, Coordinate arr[], int *len);
 /* logic */
 int evaluatePath(Path p);
 int evaluateBuild(Coordinate pos);
+void shufflePath(Path arr[], int len);
+void shuffleCoordinate(Coordinate arr[], int len);
 
 int main(int argc, char **argv) {
 
@@ -93,6 +95,7 @@ int main(int argc, char **argv) {
     /* Move worker */
     Path possiblePath[18];
     getAllPossibleMove(possiblePath, &len);
+    shufflePath(possiblePath, len);
 
     Path movePath;
     for (i = 0;i < len;i++) {
@@ -107,6 +110,7 @@ int main(int argc, char **argv) {
     /* Build structure */
     Coordinate possiblePos[9];
     getAllPossibleBuild(movePath.to, possiblePos, &len);
+    shuffleCoordinate(possiblePos, len);
 
     Coordinate buildPos;
     maxScore = -1;
@@ -353,4 +357,28 @@ int evaluateBuild(Coordinate pos) {
     }
 
     return score;
+}
+
+void shufflePath(Path arr[], int len) {
+    if (len == 0) return;
+    int i, j;
+    for (i = 0;i < len;i++) {
+        j = rand() / (RAND_MAX / len);
+        /* swap i,j */
+        Path tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
+    }
+}
+
+void shuffleCoordinate(Coordinate arr[], int len) {
+    if (len == 0) return;
+    int i, j;
+    for (i = 0;i < len;i++) {
+        j = rand() / (RAND_MAX / len);
+        /* swap i,j */
+        Coordinate tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
+    }
 }
