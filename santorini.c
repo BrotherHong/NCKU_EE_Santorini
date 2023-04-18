@@ -18,6 +18,11 @@ typedef struct coordinate_s {
     int r, c;
 } Coordinate;
 
+typedef struct path_s {
+    Coordinate from;
+    Coordinate to;
+} Path;
+
 const Coordinate delta[9] = {
     {-1, -1}, {-1, 0}, {-1, 1},
     {0, -1}, {0, 0}, {0, 1},
@@ -38,6 +43,7 @@ int structure[GRID_SIZE][GRID_SIZE];
 
 Coordinate chessPositions[2];
 
+/* Input */
 void readArgs(char **);
 void setGod(God *, const char *);
 void initChess();
@@ -46,10 +52,12 @@ void findChessPosition();
 void saveChess();
 void saveStructure();
 
+/* Coordinate */
 Coordinate generateRandomCoordinate();
 bool isOutOfRange(Coordinate);
 Coordinate addCoordinate(Coordinate, Coordinate);
 
+/* Worker and Building */
 bool canPlaceWorkerAt(Coordinate);
 void placeWorkersRandomly(int);
 bool canMoveWorker(Coordinate from, Coordinate to);
@@ -57,9 +65,12 @@ bool canWorkerEverMove(Coordinate);
 void moveWorker(Coordinate from, Coordinate to);
 bool canBuildAt(Coordinate);
 void buildStructureAt(Coordinate);
+void getAllPossibleMove(Path arr[], int *len);
+void getAllPossibleBuild(Coordinate from, Coordinate arr[], int *len);
 
-void getPossibleMove(Coordinate from, Coordinate arr[], int *len);
-void getPossibleBuild(Coordinate from, Coordinate arr[], int *len);
+/* logic */
+int evaluatePath(Path p);
+int evaluateBuild(Coordinate pos);
 
 int main(int argc, char **argv) {
 
@@ -76,42 +87,33 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    /* pick a chess randomly */
-    findChessPosition();
-    int randIndex = rand()%2;
-    Coordinate originPos = chessPositions[randIndex];
-    if (!canWorkerEverMove(originPos)) {
-        originPos = chessPositions[!randIndex];
-    }
+    int maxScore = -1;
+    int i, len;
 
-    int len, i;
-    Coordinate possiblePos[9];
-    /* move chess as high as possible */
-    getPossibleMove(originPos, possiblePos, &len);
-    Coordinate targetPos;
-    int mx = -1;
+    /* Move worker */
+    Path possiblePath[18];
+    getAllPossibleMove(possiblePath, &len);
+
+    Path movePath;
     for (i = 0;i < len;i++) {
-        Coordinate *psb = &possiblePos[i];
-        int height = structure[psb->r][psb->c];
-        if (height > mx) {
-            mx = height;
-            targetPos = possiblePos[i];
+        int score = evaluatePath(possiblePath[i]);
+        if (score > maxScore) {
+            maxScore = score;
+            movePath = possiblePath[i];
         }
     }
-    moveWorker(originPos, targetPos);
+    moveWorker(movePath.from, movePath.to);
 
-    /* build as high as possible but build h<3 first */ 
-    getPossibleBuild(targetPos, possiblePos, &len);
+    /* Build structure */
+    Coordinate possiblePos[9];
+    getAllPossibleBuild(movePath.to, possiblePos, &len);
+
     Coordinate buildPos;
-    mx = -1;
+    maxScore = -1;
     for (i = 0;i < len;i++) {
-        Coordinate *psb = &possiblePos[i];
-        int height = structure[psb->r][psb->c];
-        if (height > mx) {
-            if (mx != -1 && height == 3) {
-                continue;
-            }
-            mx = height;
+        int score = evaluateBuild(possiblePos[i]);
+        if (score > maxScore) {
+            maxScore = score;
             buildPos = possiblePos[i];
         }
     }
@@ -300,18 +302,28 @@ void buildStructureAt(Coordinate pos) {
     /* printf("Build at (%d,%d)\n", pos.r, pos.c); */
 }
 
-void getPossibleMove(Coordinate from, Coordinate arr[], int *len) {
-    int i, idx = 0;
-    for (i = 0;i < 9;i++) {
-        Coordinate to = addCoordinate(from, delta[i]);
-        if (canMoveWorker(from, to)) {
-            arr[idx++] = to;
+void getAllPossibleMove(Path arr[], int *len) {
+    findChessPosition();
+
+    int i, j, idx = 0;
+    
+    for (i = 0;i < 2;i++) {
+        for (j = 0;j < 9;j++) {
+
+            Coordinate worker = chessPositions[i];
+            Coordinate dest = addCoordinate(worker, delta[j]);
+
+            if (canMoveWorker(worker, dest)) {
+                arr[idx].from = worker;
+                arr[idx].to = dest;
+                idx++;
+            }
         }
     }
     *len = idx;
 }
 
-void getPossibleBuild(Coordinate from, Coordinate arr[], int *len) {
+void getAllPossibleBuild(Coordinate from, Coordinate arr[], int *len) {
     int i, idx = 0;
     for (i = 0;i < 9;i++) {
         Coordinate pos = addCoordinate(from, delta[i]);
@@ -320,4 +332,25 @@ void getPossibleBuild(Coordinate from, Coordinate arr[], int *len) {
         }
     }
     *len = idx;
+}
+
+int evaluatePath(Path p) {
+    int score = 0;
+    if (structure[p.to.r][p.to.c] == 3) {
+        score += 1000000;
+    }
+    if (structure[p.to.r][p.to.c] < 3) {
+        score += structure[p.to.r][p.to.c];
+    }
+    return score;
+}
+
+int evaluateBuild(Coordinate pos) {
+    int score = 0;
+
+    if (structure[pos.r][pos.c] < 3) {
+        score += structure[pos.r][pos.c];
+    }
+
+    return score;
 }
