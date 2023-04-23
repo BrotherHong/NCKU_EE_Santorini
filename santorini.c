@@ -29,6 +29,13 @@ const Coordinate delta3[9] = {
     {1, -1}, {1, 0}, {1, 1},
 };
 
+const Coordinate sidePosition[16] = {
+    {0, 0}, {0, 1}, {0, 2}, {0, 3}, {0, 4}, /* -> */
+    {1, 4}, {2, 4}, {3, 4}, /* v */
+    {4, 4}, {4, 3}, {4, 2}, {4, 1}, {4, 0}, /* <- */
+    {3, 0}, {2, 0}, {1, 0}, /* ^ */
+};
+
 Chess myChess;
 God myGod;
 God opponentGod;
@@ -56,6 +63,7 @@ void saveStructure();
 Coordinate generateRandomCoordinate();
 bool isOutOfRange(Coordinate);
 Coordinate addCoordinate(Coordinate, Coordinate);
+bool isCoordinateEqual(Coordinate a, Coordinate b);
 
 /* Worker and Building */
 bool canPlaceWorkerAt(Coordinate);
@@ -73,6 +81,11 @@ int evaluatePath(Path p);
 int evaluateBuild(Coordinate pos);
 void shufflePath(Path arr[], int len);
 void shuffleCoordinate(Coordinate arr[], int len);
+
+/* Tools */
+bool isSidePosition(Coordinate pos);
+bool isInsidePathsAsDest(Coordinate pos, Path arr[], int len);
+int findSideIndex(Coordinate pos);
 
 int main(int argc, char **argv) {
 
@@ -245,6 +258,10 @@ Coordinate addCoordinate(Coordinate a, Coordinate b) {
     return c;
 }
 
+bool isCoordinateEqual(Coordinate a, Coordinate b) {
+    return (a.r == b.r && a.c == b.c);
+}
+
 bool canPlaceWorkerAt(Coordinate pos) {
     if (isOutOfRange(pos)) {
         return false;
@@ -321,18 +338,38 @@ void getAllPossibleMove(Path arr[], int *len) {
     int i, j, idx = 0;
     
     for (i = 0;i < 2;i++) {
-        for (j = 0;j < 9;j++) {
 
         Coordinate worker = chessPositions[i];
-        Coordinate dest = addCoordinate(worker, delta3[j]);
 
-        if (canMoveWorker(worker, dest)) {
-            arr[idx].from = worker;
-            arr[idx].to = dest;
-            idx++;
+        for (j = 0;j < 9;j++) {
+            
+            Coordinate dest = addCoordinate(worker, delta3[j]);
+
+            if (canMoveWorker(worker, dest)) {
+                arr[idx].from = worker;
+                arr[idx].to = dest;
+                idx++;
+
+                if (myGod == TRITON && isSidePosition(dest)) {
+                    int k, m;
+                    for (k = 0;k < idx;k++) {
+                        Coordinate pos = arr[k].to;
+                        if (!isSidePosition(pos)) {
+                            continue;
+                        }
+                        for (m = 0;m < 9;m++) {
+                            Coordinate next = addCoordinate(pos, delta3[m]);
+                            if (canMoveWorker(pos, next) && !isInsidePathsAsDest(next, arr, idx)) {
+                                arr[idx].from = worker;
+                                arr[idx].to = next;
+                                idx++;
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
-}
 
     *len = idx;
 }
@@ -394,4 +431,35 @@ void shuffleCoordinate(Coordinate arr[], int len) {
         arr[i] = arr[j];
         arr[j] = tmp;
     }
+}
+
+bool isSidePosition(Coordinate pos) {
+    int i;
+    for (i = 0;i < 16;i++) {
+        if (isCoordinateEqual(pos, sidePosition[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool isInsidePathsAsDest(Coordinate pos, Path arr[], int len) {
+    int i;
+    for (i = 0;i < len;i++) {
+        if (isCoordinateEqual(pos, arr[i].to)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int findSideIndex(Coordinate pos) {
+    assert(isSidePosition(pos));
+    int i;
+    for (i = 0;i < 16;i++) {
+        if (isCoordinateEqual(pos, sidePosition[i])) {
+            return i;
+        }
+    }
+    return -1; /* Never reach */
 }
