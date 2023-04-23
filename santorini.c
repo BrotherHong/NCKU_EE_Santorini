@@ -29,14 +29,6 @@ const Coordinate delta3[9] = {
     {1, -1}, {1, 0}, {1, 1},
 };
 
-const Coordinate delta5[25] = {
-    {-2, -2}, {-2, -1}, {-2, 0}, {-2, 1}, {-2, 2},
-    {-1, -2}, {-1, -1}, {-1, 0}, {-1, 1}, {-1, 2},
-    {0, -2}, {0, -1}, {0, 0}, {0, 1}, {0, 2},
-    {1, -2}, {1, -1}, {1, 0}, {1, 1}, {1, 2},
-    {2, -2}, {2, -1}, {2, 0}, {2, 1}, {2, 2},
-};
-
 Chess myChess;
 God myGod;
 God opponentGod;
@@ -283,26 +275,8 @@ bool canMoveWorker(Coordinate from, Coordinate to) {
     if (structure[to.r][to.c] == 4) {
         return false;
     }
-    /* if move chess to outside circle */
-    if (abs(from.r-to.r) == 2 || abs(from.c-to.c) == 2) {
-        /* check if the move is accpetable or not */
-        int i;
-        for (i = 0;i < 9;i++) {
-            Coordinate pos = addCoordinate(to, delta3[i]);
-            /* check if the position is used for jumping from (from) to (to) */
-            if (abs(from.r-pos.r) <= 1 && abs(from.c-pos.c <= 1)) {
-                int dH_jump1 = structure[pos.r][pos.c] - structure[from.r][from.c];
-                int dH_jump2 = structure[to.r][to.c] - structure[pos.r][pos.c];
-
-                if (dH_jump1 > 1 || dH_jump2 > 1) {
-                    return false;
-                }
-            }
-        }
-    } else {
-        if (structure[to.r][to.c] - structure[from.r][from.c] > 1) {
-            return false;
-        }
+    if (structure[to.r][to.c] - structure[from.r][from.c] > 1) {
+        return false;
     }
     return true;
 }
@@ -346,35 +320,19 @@ void getAllPossibleMove(Path arr[], int *len) {
 
     int i, j, idx = 0;
     
-    if (myGod == TRITON) {
-        for (i = 0;i < 2;i++) {
-            for (j = 0;j < 25;j++) {
+    for (i = 0;i < 2;i++) {
+        for (j = 0;j < 9;j++) {
 
-                Coordinate worker = chessPositions[i];
-                Coordinate dest = addCoordinate(worker, delta5[j]);
+        Coordinate worker = chessPositions[i];
+        Coordinate dest = addCoordinate(worker, delta3[j]);
 
-                if (canMoveWorker(worker, dest)) {
-                    arr[idx].from = worker;
-                    arr[idx].to = dest;
-                    idx++;
-                }
-            }
-        }
-    } else {
-        for (i = 0;i < 2;i++) {
-            for (j = 0;j < 9;j++) {
-
-                Coordinate worker = chessPositions[i];
-                Coordinate dest = addCoordinate(worker, delta3[j]);
-
-                if (canMoveWorker(worker, dest)) {
-                    arr[idx].from = worker;
-                    arr[idx].to = dest;
-                    idx++;
-                }
-            }
+        if (canMoveWorker(worker, dest)) {
+            arr[idx].from = worker;
+            arr[idx].to = dest;
+            idx++;
         }
     }
+}
 
     *len = idx;
 }
