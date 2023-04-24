@@ -349,22 +349,22 @@ void getAllPossibleMove(Path arr[], int *len) {
                 arr[idx].from = worker;
                 arr[idx].to = dest;
                 idx++;
+            }
+        }
 
-                if (myGod == TRITON && isSidePosition(dest)) {
-                    int k, m;
-                    for (k = 0;k < idx;k++) {
-                        Coordinate pos = arr[k].to;
-                        if (!isSidePosition(pos)) {
-                            continue;
-                        }
-                        for (m = 0;m < 9;m++) {
-                            Coordinate next = addCoordinate(pos, delta3[m]);
-                            if (canMoveWorker(pos, next) && !isInsidePathsAsDest(next, arr, idx)) {
-                                arr[idx].from = worker;
-                                arr[idx].to = next;
-                                idx++;
-                            }
-                        }
+        if (myGod == TRITON) {
+            int k, m;
+            for (k = 0;k < idx;k++) {
+                Coordinate pos = arr[k].to;
+                if (!isSidePosition(pos)) {
+                    continue;
+                }
+                for (m = 0;m < 9;m++) {
+                    Coordinate next = addCoordinate(pos, delta3[m]);
+                    if (canMoveWorker(pos, next) && !isInsidePathsAsDest(next, arr, idx)) {
+                        arr[idx].from = worker;
+                        arr[idx].to = next;
+                        idx++;
                     }
                 }
             }
