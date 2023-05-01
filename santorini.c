@@ -37,6 +37,7 @@ const Coordinate sidePosition[16] = {
 };
 
 Chess myChess;
+Chess opponentChess;
 God myGod;
 God opponentGod;
 bool isPlaceWorkerRound;
@@ -55,7 +56,7 @@ void readArgs(char **);
 void setGod(God *, const char *);
 void initChess();
 void initStructure();
-void findChessPosition();
+void findChessPosition(Chess ch);
 void saveChess();
 void saveStructure();
 
@@ -71,16 +72,17 @@ void placeWorkersRandomly(int);
 bool canMoveWorker(Coordinate from, Coordinate to);
 bool canWorkerEverMove(Coordinate);
 void moveWorker(Coordinate from, Coordinate to);
-bool canBuildAt(Coordinate);
+bool canBuildAt(Coordinate, God god);
 void buildStructureAt(Coordinate);
-void getAllPossibleMove(Path arr[], int *len);
-void getAllPossibleBuild(Coordinate from, Coordinate arr[], int *len);
+void getAllPossibleMove(Path arr[], int *len, Chess chess, God god);
+void getAllPossibleBuild(Coordinate from, Coordinate arr[], int *len, God god);
 
 /* logic */
 int evaluatePath(Path p);
 int evaluateBuild(Coordinate pos);
 void shufflePath(Path arr[], int len);
 void shuffleCoordinate(Coordinate arr[], int len);
+bool willOpponentReachAfterBuildAt(Coordinate pos);
 
 /* Tools */
 bool isSidePosition(Coordinate pos);
@@ -107,7 +109,7 @@ int main(int argc, char **argv) {
 
     /* Move worker */
     Path possiblePath[50];
-    getAllPossibleMove(possiblePath, &len);
+    getAllPossibleMove(possiblePath, &len, myChess, myGod);
     shufflePath(possiblePath, len);
 
     Path movePath;
@@ -122,7 +124,7 @@ int main(int argc, char **argv) {
 
     /* Build structure */
     Coordinate possiblePos[9];
-    getAllPossibleBuild(movePath.to, possiblePos, &len);
+    getAllPossibleBuild(movePath.to, possiblePos, &len, myGod);
     shuffleCoordinate(possiblePos, len);
 
     Coordinate buildPos, buildPos2;
@@ -158,6 +160,7 @@ int main(int argc, char **argv) {
 */
 void readArgs(char **argv) {
     myChess = atoi(argv[1]);
+    opponentChess = (myChess == BLACK ? WHITE : BLACK);
     setGod(&myGod, argv[2]);
     setGod(&opponentGod, argv[3]);
     isPlaceWorkerRound = (argv[4][0] == 'Y' ? true : false);
@@ -198,12 +201,12 @@ void initStructure() {
     fclose(file);
 }
 
-void findChessPosition() {
+void findChessPosition(Chess ch) {
     int idx = 0;
     int i, j;
     for (i = 0;i < GRID_SIZE;i++) {
         for (j = 0;j < GRID_SIZE;j++) {
-            if (chess[i][j] == myChess) {
+            if (chess[i][j] == ch) {
                 chessPositions[idx].r = i;
                 chessPositions[idx].c = j;
                 idx++;
@@ -314,7 +317,7 @@ void moveWorker(Coordinate from, Coordinate to) {
     /* printf("Move %d from (%d,%d) to (%d,%d)\n", myChess, from.r, from.c, to.r, to.c); */
 }
 
-bool canBuildAt(Coordinate pos) {
+bool canBuildAt(Coordinate pos, God god) {
     if (isOutOfRange(pos)) {
         return false;
     }
@@ -332,8 +335,8 @@ void buildStructureAt(Coordinate pos) {
     /* printf("Build at (%d,%d)\n", pos.r, pos.c); */
 }
 
-void getAllPossibleMove(Path arr[], int *len) {
-    findChessPosition();
+void getAllPossibleMove(Path arr[], int *len, Chess ch, God god) {
+    findChessPosition(ch);
 
     int i, j, idx = 0;
     
@@ -352,7 +355,7 @@ void getAllPossibleMove(Path arr[], int *len) {
             }
         }
 
-        if (myGod == TRITON) {
+        if (god == TRITON) {
             int k, m;
             for (k = 0;k < idx;k++) {
                 Coordinate pos = arr[k].to;
@@ -374,15 +377,15 @@ void getAllPossibleMove(Path arr[], int *len) {
     *len = idx;
 }
 
-void getAllPossibleBuild(Coordinate from, Coordinate arr[], int *len) {
+void getAllPossibleBuild(Coordinate from, Coordinate arr[], int *len, God god) {
     int i, idx = 0;
     for (i = 0;i < 9;i++) {
         Coordinate pos = addCoordinate(from, delta3[i]);
-        if (canBuildAt(pos)) {
+        if (canBuildAt(pos, god)) {
             arr[idx++] = pos;
         }
     }
-    if (myGod == ZEUS && canBuildAt(from)) {
+    if (myGod == ZEUS && canBuildAt(from, god)) {
         arr[idx++] = from;
     }
     *len = idx;
@@ -407,6 +410,12 @@ int evaluateBuild(Coordinate pos) {
 
     if (structure[pos.r][pos.c] < 3) {
         score += structure[pos.r][pos.c];
+    }
+
+    if (structure[pos.r][pos.c] == 2) {
+        if (willOpponentReachAfterBuildAt(pos)) {
+            score -= 1000000;
+        }
     }
 
     return score;
@@ -434,6 +443,28 @@ void shuffleCoordinate(Coordinate arr[], int len) {
         arr[i] = arr[j];
         arr[j] = tmp;
     }
+}
+
+bool willOpponentReachAfterBuildAt(Coordinate pos) {
+    bool result = false;
+    /* Build */
+    assert(canBuildAt(pos, myGod));
+    structure[pos.r][pos.c]++;
+
+    /* Evaluate */
+    Path paths[50];
+    int len = 0;
+    getAllPossibleMove(paths, &len, opponentChess, opponentGod);
+
+    if (isInsidePathsAsDest(pos, paths, len)) {
+        result = true;
+    }
+
+    /* Remove */
+    structure[pos.r][pos.c]--;
+
+    /* Return */
+    return result;
 }
 
 bool isSidePosition(Coordinate pos) {
