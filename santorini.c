@@ -82,6 +82,7 @@ int evaluatePath(Path p);
 int evaluateBuild(Coordinate pos);
 void shufflePath(Path arr[], int len);
 void shuffleCoordinate(Coordinate arr[], int len);
+bool willOpponentReach(Coordinate pos);
 bool willOpponentReachAfterBuildAt(Coordinate pos);
 
 /* Tools */
@@ -418,6 +419,12 @@ int evaluateBuild(Coordinate pos) {
         }
     }
 
+    if (structure[pos.r][pos.c] == 3) {
+        if (willOpponentReach(pos)) {
+            score += 1000000;
+        }
+    }
+
     return score;
 }
 
@@ -445,6 +452,14 @@ void shuffleCoordinate(Coordinate arr[], int len) {
     }
 }
 
+bool willOpponentReach(Coordinate pos) {
+    Path paths[50];
+    int len = 0;
+    getAllPossibleMove(paths, &len, opponentChess, opponentGod);
+
+    return isInsidePathsAsDest(pos, paths, len);
+}
+
 bool willOpponentReachAfterBuildAt(Coordinate pos) {
     bool result = false;
     /* Build */
@@ -452,13 +467,7 @@ bool willOpponentReachAfterBuildAt(Coordinate pos) {
     structure[pos.r][pos.c]++;
 
     /* Evaluate */
-    Path paths[50];
-    int len = 0;
-    getAllPossibleMove(paths, &len, opponentChess, opponentGod);
-
-    if (isInsidePathsAsDest(pos, paths, len)) {
-        result = true;
-    }
+    result = willOpponentReach(pos);
 
     /* Remove */
     structure[pos.r][pos.c]--;
