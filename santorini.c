@@ -382,7 +382,7 @@ void getAllPossibleBuild(Coordinate from, Coordinate arr[], int *len) {
             arr[idx++] = pos;
         }
     }
-    if (myGod == ZEUS) {
+    if (myGod == ZEUS && canBuildAt(from)) {
         arr[idx++] = from;
     }
     *len = idx;
@@ -391,7 +391,10 @@ void getAllPossibleBuild(Coordinate from, Coordinate arr[], int *len) {
 int evaluatePath(Path p) {
     int score = 0;
     if (structure[p.to.r][p.to.c] == 3) {
-        score += 1000000;
+        /* Let ZEUS go down */ 
+        if (structure[p.from.r][p.from.c] < 3) {
+            score += 1000000;
+        }
     }
     if (structure[p.to.r][p.to.c] < 3) {
         score += structure[p.to.r][p.to.c];
