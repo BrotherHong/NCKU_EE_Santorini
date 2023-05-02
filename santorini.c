@@ -67,6 +67,9 @@ bool isOutOfRange(Coordinate);
 Coordinate addCoordinate(Coordinate, Coordinate);
 bool isCoordinateEqual(Coordinate a, Coordinate b);
 
+/* Path */
+bool isPathEqual(Path a, Path b);
+
 /* Worker and Building */
 bool canPlaceWorkerAt(Coordinate);
 void placeWorkersRandomly(int);
@@ -88,6 +91,7 @@ bool willOpponentReachAfterBuildAt(Coordinate pos);
 
 /* Tools */
 bool isSidePosition(Coordinate pos);
+bool isInsidePaths(Path path, Path arr[], int len);
 bool isInsidePathsAsDest(Coordinate pos, Path arr[], int len);
 int findSideIndex(Coordinate pos);
 
@@ -267,6 +271,10 @@ bool isCoordinateEqual(Coordinate a, Coordinate b) {
     return (a.r == b.r && a.c == b.c);
 }
 
+bool isPathEqual(Path a, Path b) {
+    return (isCoordinateEqual(a.from, b.from) && isCoordinateEqual(a.to, b.to));
+}
+
 bool canPlaceWorkerAt(Coordinate pos) {
     if (isOutOfRange(pos)) {
         return false;
@@ -366,10 +374,9 @@ void getAllPossibleMove(Path arr[], int *len, Chess ch, God god) {
                 }
                 for (m = 0;m < 9;m++) {
                     Coordinate next = addCoordinate(pos, delta3[m]);
-                    if (canMoveWorker(pos, next) && !isInsidePathsAsDest(next, arr, idx)) {
-                        arr[idx].from = worker;
-                        arr[idx].to = next;
-                        idx++;
+                    Path path = {worker, next};
+                    if (canMoveWorker(pos, next) && !isInsidePaths(path, arr, idx)) {
+                        arr[idx++] = path;
                     }
                 }
             }
@@ -484,6 +491,17 @@ bool isSidePosition(Coordinate pos) {
             return true;
         }
     }
+    return false;
+}
+
+bool isInsidePaths(Path path, Path arr[], int len) {
+    int i;
+    for (i = 0;i < len;i++) {
+        if (isPathEqual(path, arr[i])) {
+            return true;
+        }
+    }
+
     return false;
 }
 
