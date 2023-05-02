@@ -5,6 +5,7 @@
 #include<time.h>
 
 #define GRID_SIZE 5
+#define INT_MIN (-2147483647 - 1)
 
 typedef enum chess_e {
     NONE = 0, BLACK = 1, WHITE = 2,
@@ -72,7 +73,7 @@ void placeWorkersRandomly(int);
 bool canMoveWorker(Coordinate from, Coordinate to);
 bool canWorkerEverMove(Coordinate);
 void moveWorker(Coordinate from, Coordinate to);
-bool canBuildAt(Coordinate, God god);
+bool canBuildAt(Coordinate);
 void buildStructureAt(Coordinate);
 void getAllPossibleMove(Path arr[], int *len, Chess chess, God god);
 void getAllPossibleBuild(Coordinate from, Coordinate arr[], int *len, God god);
@@ -129,8 +130,8 @@ int main(int argc, char **argv) {
     shuffleCoordinate(possiblePos, len);
 
     Coordinate buildPos, buildPos2;
-    maxScore = -1;
-    int max2Score = -2;
+    maxScore = INT_MIN+1;
+    int max2Score = INT_MIN;
     for (i = 0;i < len;i++) {
         int score = evaluateBuild(possiblePos[i]);
         if (score > max2Score) {
@@ -318,7 +319,7 @@ void moveWorker(Coordinate from, Coordinate to) {
     /* printf("Move %d from (%d,%d) to (%d,%d)\n", myChess, from.r, from.c, to.r, to.c); */
 }
 
-bool canBuildAt(Coordinate pos, God god) {
+bool canBuildAt(Coordinate pos) {
     if (isOutOfRange(pos)) {
         return false;
     }
@@ -382,11 +383,11 @@ void getAllPossibleBuild(Coordinate from, Coordinate arr[], int *len, God god) {
     int i, idx = 0;
     for (i = 0;i < 9;i++) {
         Coordinate pos = addCoordinate(from, delta3[i]);
-        if (canBuildAt(pos, god)) {
+        if (canBuildAt(pos)) {
             arr[idx++] = pos;
         }
     }
-    if (myGod == ZEUS && canBuildAt(from, god)) {
+    if (god == ZEUS && canBuildAt(from)) {
         arr[idx++] = from;
     }
     *len = idx;
@@ -463,7 +464,7 @@ bool willOpponentReach(Coordinate pos) {
 bool willOpponentReachAfterBuildAt(Coordinate pos) {
     bool result = false;
     /* Build */
-    assert(canBuildAt(pos, myGod));
+    assert(canBuildAt(pos));
     structure[pos.r][pos.c]++;
 
     /* Evaluate */
