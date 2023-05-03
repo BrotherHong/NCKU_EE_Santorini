@@ -288,6 +288,16 @@ bool canPlaceWorkerAt(Coordinate pos) {/*return whether the coordinates are vali
 void placeWorkersRandomly(int num) {/*place worker in the first round randomly*/
     while (num--) {
         Coordinate coord = generateRandomCoordinate();
+        if(myChess==WHITE){
+            findChessPosition(BLACK);
+            int i;
+            for(i=0;i<9;i++){
+                coord = addCoordinate(chessPositions[num], delta3[i]);
+                if(canPlaceWorkerAt(coord)){
+                    break;
+                }
+            }
+        }
         while (!canPlaceWorkerAt(coord)) {
             coord = generateRandomCoordinate();
         }
