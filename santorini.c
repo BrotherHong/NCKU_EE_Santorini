@@ -99,14 +99,14 @@ int main(int argc, char **argv) {
 
     srand(time(NULL));
 
-    readArgs(argv);
-    initChess();
-    initStructure();
+    readArgs(argv);/*read the args inputs*/
+    initChess();/*initiallize Chess board*/
+    initStructure();/*initiallize Structure board*/
 
-    if (isPlaceWorkerRound) {
-        placeWorkersRandomly(2);
-        saveChess();
-        saveStructure();
+    if (isPlaceWorkerRound) {/*Whether it is the round to put chess(worker) or not*/
+        placeWorkersRandomly(2);/*Place worker randomly*/
+        saveChess();/*save Chess board to file*/
+        saveStructure();/*save Structure board to file*/
         return 0;
     }
 
@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
     int max2Score = INT_MIN;
     for (i = 0;i < len;i++) {
         int score = evaluateBuild(possiblePos[i]);
-        if (score > max2Score) {
+        if (score > max2Score) {/*max2Score for demeter to build another structure*/
             if (score > maxScore) {
                 maxScore = score;
                 buildPos = possiblePos[i];
@@ -175,7 +175,7 @@ void readArgs(char **argv) {
     stepLogFileName = argv[7];
 }
 
-void setGod(God *god, const char *str) {
+void setGod(God *god, const char *str) {/*basic information setup*/
     switch (str[0]) {
         case 'Z': *god = ZEUS; break;
         case 'D': *god = DEMETER; break;
@@ -183,7 +183,7 @@ void setGod(God *god, const char *str) {
     }
 }
 
-void initChess() {
+void initChess() {/*read the text file to setup chess*/
     FILE *file = fopen(chessColorFileName, "r");
     assert(file != NULL);
 
@@ -195,7 +195,7 @@ void initChess() {
     fclose(file);
 }
 
-void initStructure() {
+void initStructure() {/*read the text file to setup structure*/
     FILE *file = fopen(chessStructureFileName, "r");
     assert(file != NULL);
 
@@ -207,7 +207,7 @@ void initStructure() {
     fclose(file);
 }
 
-void findChessPosition(Chess ch) {
+void findChessPosition(Chess ch) {/*Find the positions of the chess*/
     int idx = 0;
     int i, j;
     for (i = 0;i < GRID_SIZE;i++) {
@@ -221,7 +221,7 @@ void findChessPosition(Chess ch) {
     }
 }
 
-void saveChess() {
+void saveChess() {/*save the chess to file chessColor.txt*/
     FILE *file = fopen(chessColorFileName, "w");
     assert(file != NULL);
 
@@ -235,7 +235,7 @@ void saveChess() {
     fclose(file);
 }
 
-void saveStructure() {
+void saveStructure() {/*save the structure to file chessColor.txt*/
     FILE *file = fopen(chessStructureFileName, "w");
     assert(file != NULL);
 
@@ -249,33 +249,33 @@ void saveStructure() {
     fclose(file);
 }
 
-Coordinate generateRandomCoordinate() {
+Coordinate generateRandomCoordinate() {/*get coordinate by random*/
     Coordinate coord;
     coord.r = rand()%GRID_SIZE;
     coord.c = rand()%GRID_SIZE;
     return coord;
 }
 
-bool isOutOfRange(Coordinate pos) {
+bool isOutOfRange(Coordinate pos) {/*return whether the coordinate is in the grid or not*/
     return !(0 <= pos.r && pos.r < GRID_SIZE && 0 <= pos.c && pos.c < GRID_SIZE);
 }
 
-Coordinate addCoordinate(Coordinate a, Coordinate b) {
+Coordinate addCoordinate(Coordinate a, Coordinate b) {/*get the final coordinate*/
     Coordinate c;
     c.r = a.r + b.r;
     c.c = a.c + b.c;
     return c;
 }
 
-bool isCoordinateEqual(Coordinate a, Coordinate b) {
+bool isCoordinateEqual(Coordinate a, Coordinate b) {/*return two coordinates are equal or not*/
     return (a.r == b.r && a.c == b.c);
 }
 
-bool isPathEqual(Path a, Path b) {
+bool isPathEqual(Path a, Path b) {/*return two paths are equal or not*/
     return (isCoordinateEqual(a.from, b.from) && isCoordinateEqual(a.to, b.to));
 }
 
-bool canPlaceWorkerAt(Coordinate pos) {
+bool canPlaceWorkerAt(Coordinate pos) {/*return whether the coordinates are valid or not*/
     if (isOutOfRange(pos)) {
         return false;
     }
@@ -285,7 +285,7 @@ bool canPlaceWorkerAt(Coordinate pos) {
     return true;
 }
 
-void placeWorkersRandomly(int num) {
+void placeWorkersRandomly(int num) {/*place worker in the first round randomly*/
     while (num--) {
         Coordinate coord = generateRandomCoordinate();
         while (!canPlaceWorkerAt(coord)) {
@@ -295,7 +295,7 @@ void placeWorkersRandomly(int num) {
     }
 }
 
-bool canMoveWorker(Coordinate from, Coordinate to) {
+bool canMoveWorker(Coordinate from, Coordinate to) {/*return whether the coordinate is avalible to move worker or not*/
     if (isOutOfRange(to)) {
         return false;
     }
@@ -311,7 +311,7 @@ bool canMoveWorker(Coordinate from, Coordinate to) {
     return true;
 }
 
-bool canWorkerEverMove(Coordinate pos) {
+bool canWorkerEverMove(Coordinate pos) {/*move forever*/
     int i;
     for (i = 0;i < 9;i++) {
         if (canMoveWorker(pos, addCoordinate(pos, delta3[i]))) {
@@ -321,13 +321,13 @@ bool canWorkerEverMove(Coordinate pos) {
     return false;
 }
 
-void moveWorker(Coordinate from, Coordinate to) {
+void moveWorker(Coordinate from, Coordinate to) {/*update the chessColor*/
     chess[from.r][from.c] = NONE;
     chess[to.r][to.c] = myChess;
     /* printf("Move %d from (%d,%d) to (%d,%d)\n", myChess, from.r, from.c, to.r, to.c); */
 }
 
-bool canBuildAt(Coordinate pos) {
+bool canBuildAt(Coordinate pos) {/*return whether the coordinate is valid to build the structure*/
     if (isOutOfRange(pos)) {
         return false;
     }
@@ -340,12 +340,12 @@ bool canBuildAt(Coordinate pos) {
     return true;
 }
 
-void buildStructureAt(Coordinate pos) {
+void buildStructureAt(Coordinate pos) {/*update the coordinate to build the structure*/
     structure[pos.r][pos.c]++;
     /* printf("Build at (%d,%d)\n", pos.r, pos.c); */
 }
 
-void getAllPossibleMove(Path arr[], int *len, Chess ch, God god) {
+void getAllPossibleMove(Path arr[], int *len, Chess ch, God god) {/*get all possibility to move*/
     findChessPosition(ch);
 
     int i, j, idx = 0;
@@ -365,11 +365,11 @@ void getAllPossibleMove(Path arr[], int *len, Chess ch, God god) {
             }
         }
 
-        if (god == TRITON) {
+        if (god == TRITON) {/*move to side by triton*/
             int k, m;
             for (k = 0;k < idx;k++) {
                 Coordinate pos = arr[k].to;
-                if (!isSidePosition(pos) || !isCoordinateEqual(arr[k].from, worker)) {
+                if (!isSidePosition(pos)) {
                     continue;
                 }
                 for (m = 0;m < 9;m++) {
@@ -386,7 +386,7 @@ void getAllPossibleMove(Path arr[], int *len, Chess ch, God god) {
     *len = idx;
 }
 
-void getAllPossibleBuild(Coordinate from, Coordinate arr[], int *len, God god) {
+void getAllPossibleBuild(Coordinate from, Coordinate arr[], int *len, God god) {/*get all the possibility to build structure*/
     int i, idx = 0;
     for (i = 0;i < 9;i++) {
         Coordinate pos = addCoordinate(from, delta3[i]);
@@ -400,7 +400,7 @@ void getAllPossibleBuild(Coordinate from, Coordinate arr[], int *len, God god) {
     *len = idx;
 }
 
-int evaluatePath(Path p) {
+int evaluatePath(Path p) {/*get the score of all possible path*/
     int score = 0;
     if (structure[p.to.r][p.to.c] == 3) {
         /* Let ZEUS go down */ 
@@ -414,7 +414,7 @@ int evaluatePath(Path p) {
     return score;
 }
 
-int evaluateBuild(Coordinate pos) {
+int evaluateBuild(Coordinate pos) {/*get the score of all possible structure*/
     int score = 0;
 
     if (structure[pos.r][pos.c] < 3) {
@@ -436,7 +436,7 @@ int evaluateBuild(Coordinate pos) {
     return score;
 }
 
-void shufflePath(Path arr[], int len) {
+void shufflePath(Path arr[], int len) {/*rearrange the paths randomly*/
     if (len == 0) return;
     int i, j;
     for (i = 0;i < len;i++) {
@@ -448,7 +448,7 @@ void shufflePath(Path arr[], int len) {
     }
 }
 
-void shuffleCoordinate(Coordinate arr[], int len) {
+void shuffleCoordinate(Coordinate arr[], int len) {/*rearrange the coordinate*/
     if (len == 0) return;
     int i, j;
     for (i = 0;i < len;i++) {
@@ -460,7 +460,7 @@ void shuffleCoordinate(Coordinate arr[], int len) {
     }
 }
 
-bool willOpponentReach(Coordinate pos) {
+bool willOpponentReach(Coordinate pos) {/*return whether the opponent will reach the coordinate or not*/
     Path paths[50];
     int len = 0;
     getAllPossibleMove(paths, &len, opponentChess, opponentGod);
@@ -468,7 +468,7 @@ bool willOpponentReach(Coordinate pos) {
     return isInsidePathsAsDest(pos, paths, len);
 }
 
-bool willOpponentReachAfterBuildAt(Coordinate pos) {
+bool willOpponentReachAfterBuildAt(Coordinate pos) {/*return whether the opponent will reach the coordinate or not after building*/
     bool result = false;
     /* Build */
     assert(canBuildAt(pos));
@@ -484,7 +484,7 @@ bool willOpponentReachAfterBuildAt(Coordinate pos) {
     return result;
 }
 
-bool isSidePosition(Coordinate pos) {
+bool isSidePosition(Coordinate pos) {/*return whether the coordinate is side position or not*/
     int i;
     for (i = 0;i < 16;i++) {
         if (isCoordinateEqual(pos, sidePosition[i])) {
@@ -494,7 +494,7 @@ bool isSidePosition(Coordinate pos) {
     return false;
 }
 
-bool isInsidePaths(Path path, Path arr[], int len) {
+bool isInsidePaths(Path path, Path arr[], int len) {/*return whether the coordinate is inside path  or not*/
     int i;
     for (i = 0;i < len;i++) {
         if (isPathEqual(path, arr[i])) {
@@ -505,7 +505,7 @@ bool isInsidePaths(Path path, Path arr[], int len) {
     return false;
 }
 
-bool isInsidePathsAsDest(Coordinate pos, Path arr[], int len) {
+bool isInsidePathsAsDest(Coordinate pos, Path arr[], int len) {/*return the index of the side coordinate*/
     int i;
     for (i = 0;i < len;i++) {
         if (isCoordinateEqual(pos, arr[i].to)) {
@@ -515,7 +515,7 @@ bool isInsidePathsAsDest(Coordinate pos, Path arr[], int len) {
     return false;
 }
 
-int findSideIndex(Coordinate pos) {
+int findSideIndex(Coordinate pos) {/*return the index of the side coordinate*/
     assert(isSidePosition(pos));
     int i;
     for (i = 0;i < 16;i++) {
