@@ -369,7 +369,7 @@ void getAllPossibleMove(Path arr[], int *len, Chess ch, God god) {
             int k, m;
             for (k = 0;k < idx;k++) {
                 Coordinate pos = arr[k].to;
-                if (!isSidePosition(pos)) {
+                if (!isSidePosition(pos) || !isCoordinateEqual(arr[k].from, worker)) {
                     continue;
                 }
                 for (m = 0;m < 9;m++) {
