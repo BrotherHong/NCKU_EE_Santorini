@@ -6,6 +6,7 @@
 
 #define GRID_SIZE 5
 #define INT_MIN (-2147483647 - 1)
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 typedef enum chess_e {
     NONE = 0, BLACK = 1, WHITE = 2,
@@ -75,7 +76,7 @@ bool canPlaceWorkerAt(Coordinate);
 void placeWorkersRandomly(int);
 bool canMoveWorker(Coordinate from, Coordinate to);
 bool canWorkerEverMove(Coordinate);
-void moveWorker(Coordinate from, Coordinate to);
+void moveWorker(Path p);
 bool canBuildAt(Coordinate);
 void buildStructureAt(Coordinate);
 void getAllPossibleMove(Path arr[], int *len, Chess chess, God god);
@@ -83,7 +84,7 @@ void getAllPossibleBuild(Coordinate from, Coordinate arr[], int *len, God god);
 
 /* logic */
 int evaluatePath(Path p);
-int evaluateBuild(Coordinate pos);
+int evaluateBuild(Coordinate pos, Coordinate from);
 void shufflePath(Path arr[], int len);
 void shuffleCoordinate(Coordinate arr[], int len);
 bool willOpponentReach(Coordinate pos);
@@ -94,6 +95,7 @@ bool isSidePosition(Coordinate pos);
 bool isInsidePaths(Path path, Path arr[], int len);
 bool isInsidePathsAsDest(Coordinate pos, Path arr[], int len);
 int findSideIndex(Coordinate pos);
+int getMaxBuildScoreAfterMove(Path p);
 
 int main(int argc, char **argv) {
 
@@ -110,7 +112,7 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    int maxScore = -1;
+    int maxScore = INT_MIN;
     int i, len;
 
     /* Move worker */
@@ -126,7 +128,7 @@ int main(int argc, char **argv) {
             movePath = possiblePath[i];
         }
     }
-    moveWorker(movePath.from, movePath.to);
+    moveWorker(movePath);
 
     /* Build structure */
     Coordinate possiblePos[9];
@@ -137,7 +139,7 @@ int main(int argc, char **argv) {
     maxScore = INT_MIN+1;
     int max2Score = INT_MIN;
     for (i = 0;i < len;i++) {
-        int score = evaluateBuild(possiblePos[i]);
+        int score = evaluateBuild(possiblePos[i], movePath.to);
         if (score > max2Score) {/*max2Score for demeter to build another structure*/
             if (score > maxScore) {
                 maxScore = score;
@@ -331,9 +333,9 @@ bool canWorkerEverMove(Coordinate pos) {/*move forever*/
     return false;
 }
 
-void moveWorker(Coordinate from, Coordinate to) {/*update the chessColor*/
-    chess[from.r][from.c] = NONE;
-    chess[to.r][to.c] = myChess;
+void moveWorker(Path p) {/*update the chessColor*/
+    chess[p.from.r][p.from.c] = NONE;
+    chess[p.to.r][p.to.c] = myChess;
     /* printf("Move %d from (%d,%d) to (%d,%d)\n", myChess, from.r, from.c, to.r, to.c); */
 }
 
@@ -418,28 +420,36 @@ int evaluatePath(Path p) {/*get the score of all possible path*/
             score += 1000000;
         }
     }
+
     if (structure[p.to.r][p.to.c] < 3) {
         score += structure[p.to.r][p.to.c];
     }
-    return score;
+
+    return score + getMaxBuildScoreAfterMove(p);
 }
 
-int evaluateBuild(Coordinate pos) {/*get the score of all possible structure*/
+/*evaluate the score for building structure at [pos] from [from]*/
+int evaluateBuild(Coordinate pos, Coordinate from) {
     int score = 0;
 
     if (structure[pos.r][pos.c] < 3) {
-        score += structure[pos.r][pos.c];
-    }
-
-    if (structure[pos.r][pos.c] == 2) {
-        if (willOpponentReachAfterBuildAt(pos)) {
-            score -= 1000000;
+        /* Do not build the structure that higher than the structure currently stand on */
+        if (structure[pos.r][pos.c] <= structure[from.r][from.c]) {
+            score += structure[pos.r][pos.c];
         }
     }
 
+    /* Avoid to build floor 3 for opponent */
+    if (structure[pos.r][pos.c] == 2) {
+        if (willOpponentReachAfterBuildAt(pos)) {
+            score -= 100;
+        }
+    }
+
+    /* Build floor 4 if opponet can reach */
     if (structure[pos.r][pos.c] == 3) {
         if (willOpponentReach(pos)) {
-            score += 1000000;
+            score += 100;
         }
     }
 
@@ -534,4 +544,28 @@ int findSideIndex(Coordinate pos) {/*return the index of the side coordinate*/
         }
     }
     return -1; /* Never reach */
+}
+
+int getMaxBuildScoreAfterMove(Path p) {
+    Path p_rev = {p.to, p.from};
+
+    /* move */
+    moveWorker(p);
+
+    /* Calculate */
+    int mx = INT_MIN;
+    Coordinate buildPos[9];
+    int len = 0;
+    getAllPossibleBuild(p.to, buildPos, &len, myGod);
+    
+    int i;
+    for (i = 0;i < len;i++) {
+        mx = MAX(mx, evaluateBuild(buildPos[i], p.to));
+    }
+
+    /* undo move */
+    moveWorker(p_rev);
+
+    /* Return */
+    return mx;
 }
