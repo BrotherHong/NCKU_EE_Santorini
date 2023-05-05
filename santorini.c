@@ -77,7 +77,7 @@ void placeWorkersRandomly(int);
 bool canMoveWorker(Coordinate from, Coordinate to);
 bool canWorkerEverMove(Coordinate);
 void moveWorker(Path p);
-bool canBuildAt(Coordinate);
+bool canBuildAt(Coordinate pos, Coordinate from, God god);
 void buildStructureAt(Coordinate);
 void getAllPossibleMove(Path arr[], int *len, Chess chess, God god);
 void getAllPossibleBuild(Coordinate from, Coordinate arr[], int *len, God god);
@@ -88,7 +88,7 @@ int evaluateBuild(Coordinate pos, Coordinate from);
 void shufflePath(Path arr[], int len);
 void shuffleCoordinate(Coordinate arr[], int len);
 bool willOpponentReach(Coordinate pos);
-bool willOpponentReachAfterBuildAt(Coordinate pos);
+bool willOpponentReachAfterBuildAt(Coordinate pos, Coordinate from, God god);
 
 /* Tools */
 bool isSidePosition(Coordinate pos);
@@ -339,12 +339,25 @@ void moveWorker(Path p) {/*update the chessColor*/
     /* printf("Move %d from (%d,%d) to (%d,%d)\n", myChess, from.r, from.c, to.r, to.c); */
 }
 
-bool canBuildAt(Coordinate pos) {/*return whether the coordinate is valid to build the structure*/
+bool canBuildAt(Coordinate pos, Coordinate from, God god) {/*return whether the coordinate is valid to build the structure*/
     if (isOutOfRange(pos)) {
         return false;
     }
-    if (chess[pos.r][pos.c] != NONE) {
+    if (god != ZEUS && chess[pos.r][pos.c] != NONE) {
         return false;
+    }
+    if (god == ZEUS) {
+        if (isCoordinateEqual(pos, from)) {
+            /* build stucture currently stand on */
+            /* Do not build if its height will be higher than 3 */
+            if (structure[pos.r][pos.c]+1 >= 3) {
+                return false;
+            }
+        } else {
+            if (chess[pos.r][pos.c] != NONE) {
+                return false;
+            }
+        }
     }
     if (structure[pos.r][pos.c] == 4) {
         return false;
@@ -402,11 +415,11 @@ void getAllPossibleBuild(Coordinate from, Coordinate arr[], int *len, God god) {
     int i, idx = 0;
     for (i = 0;i < 9;i++) {
         Coordinate pos = addCoordinate(from, delta3[i]);
-        if (canBuildAt(pos)) {
+        if (canBuildAt(pos, from, god)) {
             arr[idx++] = pos;
         }
     }
-    if (god == ZEUS && canBuildAt(from)) {
+    if (god == ZEUS && canBuildAt(from, from, god)) {
         arr[idx++] = from;
     }
     *len = idx;
@@ -441,7 +454,7 @@ int evaluateBuild(Coordinate pos, Coordinate from) {
 
     /* Avoid to build floor 3 for opponent */
     if (structure[pos.r][pos.c] == 2) {
-        if (willOpponentReachAfterBuildAt(pos)) {
+        if (willOpponentReachAfterBuildAt(pos, from, myGod)) {
             score -= 100;
         }
     }
@@ -488,10 +501,10 @@ bool willOpponentReach(Coordinate pos) {/*return whether the opponent will reach
     return isInsidePathsAsDest(pos, paths, len);
 }
 
-bool willOpponentReachAfterBuildAt(Coordinate pos) {/*return whether the opponent will reach the coordinate or not after building*/
+bool willOpponentReachAfterBuildAt(Coordinate pos, Coordinate from, God god) {/*return whether the opponent will reach the coordinate or not after building*/
     bool result = false;
     /* Build */
-    assert(canBuildAt(pos));
+    assert(canBuildAt(pos, from, god));
     structure[pos.r][pos.c]++;
 
     /* Evaluate */
