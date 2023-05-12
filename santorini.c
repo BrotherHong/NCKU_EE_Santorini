@@ -608,7 +608,9 @@ void calculateOpponentField() {
     for (i = 0;i < 2;i++) {
         for (j = 0;j < 9;j++) {
             Coordinate pos = addCoordinate(chessPositions[i], delta3[j]);
-            opponentField[pos.r][pos.c] = 1;
+            if (!isOutOfRange(pos)) {
+                opponentField[pos.r][pos.c] = 1;
+            }
         }
     }
 }
