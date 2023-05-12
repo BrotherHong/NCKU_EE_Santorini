@@ -8,9 +8,12 @@
 #define INT_MIN (-2147483647 - 1)
 #define SCORE_WIN (1000000)
 #define SCORE_MUST_BUILD (100)
-#define WEIGHT_HEIGHT (5)
-#define WEIGHT_FIELD (1)
+#define WEIGHT_MOVE_HEIGHT (7)
+#define WEIGHT_MOVE_FIELD (1)
+#define WEIGHT_BUILD_HEIGHT (5)
+#define WEIGHT_BUILD_FIELD (3)
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define ABS(a) ((a) > 0 ? (a) : -(a))
 
 typedef enum chess_e {
     NONE = 0, BLACK = 1, WHITE = 2,
@@ -444,8 +447,10 @@ int evaluatePath(Path p) {/*get the score of all possible path*/
     }
 
     if (structure[p.to.r][p.to.c] < 3) {
-        score += structure[p.to.r][p.to.c];
+        score += (structure[p.to.r][p.to.c] * WEIGHT_MOVE_HEIGHT);
     }
+
+    score += (opponentField[p.to.r][p.to.c] * WEIGHT_MOVE_FIELD);
 
     return score + getMaxBuildScoreAfterMove(p);
 }
@@ -457,7 +462,8 @@ int evaluateBuild(Coordinate pos, Coordinate from) {
     if (structure[pos.r][pos.c] < 3) {
         /* Do not build the structure that higher than the structure currently stand on */
         if (structure[pos.r][pos.c] <= structure[from.r][from.c]) {
-            score += (structure[pos.r][pos.c]+1) * WEIGHT_HEIGHT;
+            int height = structure[pos.r][pos.c];
+            score += (height+1) * WEIGHT_BUILD_HEIGHT;
         }
     }
 
@@ -477,12 +483,12 @@ int evaluateBuild(Coordinate pos, Coordinate from) {
 
     /* ZEUS: build at position standing on first */
     if (isCoordinateEqual(pos, from)) {
-        score += (1 * WEIGHT_HEIGHT);
+        score += (1 * WEIGHT_BUILD_HEIGHT);
     }
 
     /* Consider opponent field score */
     /* Build as far away from your opponents as possible */
-    score -= (opponentField[pos.r][pos.c] * WEIGHT_FIELD);
+    score -= (opponentField[pos.r][pos.c] * WEIGHT_BUILD_FIELD);
 
     return score;
 }
@@ -604,12 +610,21 @@ int getMaxBuildScoreAfterMove(Path p) {
 void calculateOpponentField() {
     findChessPosition(opponentChess);
 
-    int i, j;
-    for (i = 0;i < 2;i++) {
-        for (j = 0;j < 9;j++) {
-            Coordinate pos = addCoordinate(chessPositions[i], delta3[j]);
-            if (!isOutOfRange(pos)) {
-                opponentField[pos.r][pos.c] = 1;
+    int i, j, k;
+    for (i = 0;i < GRID_SIZE;i++) {
+        for (j = 0;j < GRID_SIZE;j++) {
+            for (k = 0;k < 2;k++) {
+                Coordinate pos = {i, j};
+                Coordinate op = chessPositions[k];
+                int dr, dc;
+                dr = ABS(pos.r-op.r);
+                dc = ABS(pos.c-op.c);
+
+                if (dr <= 1 && dc <= 1) {
+                    opponentField[i][j] = MAX(opponentField[i][j], 2);
+                } else if (dr <= 2 && dc <= 2) {
+                    opponentField[i][j] = MAX(opponentField[i][j], 1);
+                }
             }
         }
     }
