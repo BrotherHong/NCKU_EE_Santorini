@@ -8,7 +8,8 @@
 #define INT_MIN (-2147483647 - 1)
 #define SCORE_WIN (1000000)
 #define SCORE_MUST_BUILD (100)
-#define WEIGHT_HEIGHT (1)
+#define WEIGHT_HEIGHT (5)
+#define WEIGHT_FIELD (1)
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 typedef enum chess_e {
@@ -55,6 +56,7 @@ int chess[GRID_SIZE][GRID_SIZE];
 int structure[GRID_SIZE][GRID_SIZE];
 
 Coordinate chessPositions[2];
+int opponentField[GRID_SIZE][GRID_SIZE];
 
 /* Input */
 void readArgs(char **);
@@ -99,6 +101,7 @@ bool isInsidePaths(Path path, Path arr[], int len);
 bool isInsidePathsAsDest(Coordinate pos, Path arr[], int len);
 int findSideIndex(Coordinate pos);
 int getMaxBuildScoreAfterMove(Path p);
+void calculateOpponentField();
 
 int main(int argc, char **argv) {
 
@@ -114,6 +117,9 @@ int main(int argc, char **argv) {
         saveStructure();/*save Structure board to file*/
         return 0;
     }
+
+    /* Load data needed */
+    calculateOpponentField();
 
     int maxScore = INT_MIN;
     int i, len;
@@ -474,6 +480,10 @@ int evaluateBuild(Coordinate pos, Coordinate from) {
         score += (1 * WEIGHT_HEIGHT);
     }
 
+    /* Consider opponent field score */
+    /* Build as far away from your opponents as possible */
+    score -= (opponentField[pos.r][pos.c] * WEIGHT_FIELD);
+
     return score;
 }
 
@@ -589,4 +599,16 @@ int getMaxBuildScoreAfterMove(Path p) {
 
     /* Return */
     return mx;
+}
+
+void calculateOpponentField() {
+    findChessPosition(opponentChess);
+
+    int i, j;
+    for (i = 0;i < 2;i++) {
+        for (j = 0;j < 9;j++) {
+            Coordinate pos = addCoordinate(chessPositions[i], delta3[j]);
+            opponentField[pos.r][pos.c] = 1;
+        }
+    }
 }
