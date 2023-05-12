@@ -4,8 +4,11 @@
 #include<assert.h>
 #include<time.h>
 
-#define GRID_SIZE 5
+#define GRID_SIZE (5)
 #define INT_MIN (-2147483647 - 1)
+#define SCORE_WIN (1000000)
+#define SCORE_MUST_BUILD (100)
+#define WEIGHT_HEIGHT (1)
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 typedef enum chess_e {
@@ -430,7 +433,7 @@ int evaluatePath(Path p) {/*get the score of all possible path*/
     if (structure[p.to.r][p.to.c] == 3) {
         /* Let ZEUS go down */ 
         if (structure[p.from.r][p.from.c] < 3) {
-            score += 1000000;
+            score += SCORE_WIN;
         }
     }
 
@@ -448,22 +451,27 @@ int evaluateBuild(Coordinate pos, Coordinate from) {
     if (structure[pos.r][pos.c] < 3) {
         /* Do not build the structure that higher than the structure currently stand on */
         if (structure[pos.r][pos.c] <= structure[from.r][from.c]) {
-            score += structure[pos.r][pos.c];
+            score += (structure[pos.r][pos.c]+1) * WEIGHT_HEIGHT;
         }
     }
 
     /* Avoid to build floor 3 for opponent */
     if (structure[pos.r][pos.c] == 2) {
         if (willOpponentReachAfterBuildAt(pos, from, myGod)) {
-            score -= 100;
+            score -= SCORE_MUST_BUILD;
         }
     }
 
     /* Build floor 4 if opponet can reach */
     if (structure[pos.r][pos.c] == 3) {
         if (willOpponentReach(pos)) {
-            score += 100;
+            score += SCORE_MUST_BUILD;
         }
+    }
+
+    /* ZEUS: build at position standing on first */
+    if (isCoordinateEqual(pos, from)) {
+        score += (1 * WEIGHT_HEIGHT);
     }
 
     return score;
