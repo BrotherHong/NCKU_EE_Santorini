@@ -8,10 +8,10 @@
 #define INT_MIN (-2147483647 - 1)
 #define SCORE_WIN (1000000)
 #define SCORE_MUST_BUILD (100)
-#define WEIGHT_MOVE_HEIGHT (7)
-#define WEIGHT_MOVE_FIELD (1)
+#define WEIGHT_MOVE_UP (7)
+#define WEIGHT_MOVE_FIELD (0)
 #define WEIGHT_BUILD_HEIGHT (5)
-#define WEIGHT_BUILD_FIELD (3)
+#define WEIGHT_BUILD_FIELD (2)
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define ABS(a) ((a) > 0 ? (a) : -(a))
 
@@ -439,18 +439,25 @@ void getAllPossibleBuild(Coordinate from, Coordinate arr[], int *len, God god) {
 
 int evaluatePath(Path p) {/*get the score of all possible path*/
     int score = 0;
-    if (structure[p.to.r][p.to.c] == 3) {
+    int fromHeight = structure[p.from.r][p.from.c];
+    int toHeight = structure[p.to.r][p.to.c];
+
+    if (toHeight == 3) {
         /* Let ZEUS go down */ 
-        if (structure[p.from.r][p.from.c] < 3) {
+        if (fromHeight < 3) {
             score += SCORE_WIN;
         }
     }
 
-    if (structure[p.to.r][p.to.c] < 3) {
-        score += (structure[p.to.r][p.to.c] * WEIGHT_MOVE_HEIGHT);
+    if (toHeight < 3) {
+        score += (toHeight * WEIGHT_MOVE_UP);
     }
 
     score += (opponentField[p.to.r][p.to.c] * WEIGHT_MOVE_FIELD);
+
+    if (toHeight < fromHeight) {
+        score -= (fromHeight - toHeight);
+    }
 
     return score + getMaxBuildScoreAfterMove(p);
 }
